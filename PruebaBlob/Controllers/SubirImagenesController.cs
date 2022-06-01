@@ -43,7 +43,7 @@ namespace PruebaBlob.Controllers
                     {
                         var InputFileName = Path.GetFileName(file.FileName);
                         System.Diagnostics.Debug.WriteLine(InputFileName);
-                        Task.Run(() => SendImage("imagenes", file));                        
+                        await SendImage("imagenes", file);                        
                     }
 
                 }
@@ -63,11 +63,11 @@ namespace PruebaBlob.Controllers
                 System.Diagnostics.Debug.WriteLine("_________________________Result metadata_________________________________");
                 System.Diagnostics.Debug.WriteLine(responseUpload.Value);
                 System.Diagnostics.Debug.WriteLine("_________________________________________________________________________");
-                bool respuetaPasoAEcommerce = await SubirAShopify(blob.Uri.AbsoluteUri);
+                /*bool respuetaPasoAEcommerce = await SubirAShopify(blob.Uri.AbsoluteUri);
                 if (respuetaPasoAEcommerce)
 				{
                     blob.Delete();
-				}
+				}*/
 
             }
             catch (Exception ex)
@@ -188,5 +188,39 @@ namespace PruebaBlob.Controllers
                 return false;
             }
 		}
+
+        public async Task getBlobs(string containerName, HttpPostedFileBase file)
+        {
+            try
+            {
+                var blobClient = new BlobServiceClient(System.Web.Configuration.WebConfigurationManager.AppSettings["BlobConnString"]);
+                var blobContainer = blobClient.GetBlobContainerClient(containerName);                
+                var blobs = blobContainer.GetBlobsAsync();
+                List<string> blobsNames = new List<string>();
+                IAsyncEnumerator<BlobItem> enumerator = blobs.GetAsyncEnumerator();
+                try
+                {  
+                    
+                    while (await enumerator.MoveNextAsync())
+                    {
+                        BlobItem blob = enumerator.Current;
+                        blobsNames.Add(blob.Name);
+                    }
+                    
+                    blobsNames.Sort();
+                    blobsNames.ForEach(name => System.Diagnostics.Debug.WriteLine(name));
+                }
+                finally
+                {
+                    await enumerator.DisposeAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("______________________Exception__________________");
+                System.Diagnostics.Debug.WriteLine(ex.Message);
+                System.Diagnostics.Debug.WriteLine(ex.Source);
+            }
+        }
     }
 }
